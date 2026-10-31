@@ -198,8 +198,17 @@ def preflight(worktree, wrapper, good, bad, timeout_seconds, force):
 
 
 FIRST_BAD_PATTERNS = (
-    re.compile(r"^([0-9a-f]{7,64}) is the first bad commit", re.MULTILINE),
-    re.compile(r"^first bad commit: \[([0-9a-f]{7,64})\]", re.MULTILINE),
+    # Git has printed both `is the first bad commit` and, in newer releases,
+    # `is the first 'bad' commit`. Accept either, and either bisect term.
+    re.compile(
+        r"^([0-9a-f]{7,64}) is the first ['\"]?(?:bad|new)['\"]? commit", re.MULTILINE
+    ),
+    re.compile(
+        r"^first ['\"]?(?:bad|new)['\"]? commit: \[([0-9a-f]{7,64})\]", re.MULTILINE
+    ),
+    re.compile(
+        r"^# first ['\"]?(?:bad|new)['\"]? commit: \[([0-9a-f]{7,64})\]", re.MULTILINE
+    ),
 )
 
 
@@ -216,9 +225,13 @@ def parse_bisect_log(text):
     steps = []
     for line in text.splitlines():
         line = line.strip()
-        match = re.match(r"^# (good|bad|skip): \[([0-9a-f]{7,64})\] (.*)$", line)
+        match = re.match(
+            r"^# ['\"]?(good|bad|skip|old|new)['\"]?: \[([0-9a-f]{7,64})\] (.*)$", line
+        )
         if match:
-            steps.append({"result": match.group(1), "sha": match.group(2), "subject": match.group(3)})
+            steps.append(
+                {"result": match.group(1), "sha": match.group(2), "subject": match.group(3)}
+            )
     return steps
 
 
@@ -285,7 +298,9 @@ def bisect(repo, good, bad, command, timeout_seconds, keep, force, no_preflight)
             git(worktree.path, "bisect", "reset", check=False)
 
             combined = (run_proc.stdout or "") + (run_proc.stderr or "")
-            first_bad = parse_first_bad(combined)
+            # `git bisect log` is the authoritative record of the verdict; the
+            # console output is the fallback.
+            first_bad = parse_first_bad(log_text) or parse_first_bad(combined)
             steps = parse_bisect_log(log_text)
 
             report = {

@@ -115,6 +115,11 @@ Things that have already caused bugs here. Read before editing.
 - **`gh api .../commits/<sha>/pulls` returns a JSON array.** `--jq '.[] | {...}'`
   emits one object per line and breaks a `json.loads` of the whole output. Parse
   the array.
+- **`git bisect` wording changes between releases.** Older git prints
+  `is the first bad commit`; 2.55 prints `is the first 'bad' commit`. Parse the
+  `git bisect log` line first, keep the console patterns tolerant, and keep
+  unit tests for both forms. This exact difference made every CI run report no
+  verdict while local runs passed.
 - **`git show --numstat` on a merge commit prints nothing** without `-m`. An
   empty `files_changed` for a merge is expected, not a bug.
 - **`git blame` on a merge** attributes a conflict-resolution line to the merge

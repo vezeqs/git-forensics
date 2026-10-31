@@ -49,6 +49,11 @@ regression test.
   verdict is not evidence of a regression.
 - The validator misread YAML block scalars (`description: >`) as a short
   description, and had no negative tests. Both fixed.
+- The verdict parser only matched `is the first bad commit`. Git 2.55 prints
+  `is the first 'bad' commit`, so on those versions every bisect silently
+  reported no verdict. Both forms parse now, the authoritative
+  `git bisect log` line is read first, and the console wording is covered by
+  unit tests.
 
 ### Fixed in the documentation
 

@@ -12,6 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from helpers import HUNT, commit, git, init_repo, run_script  # noqa: E402
 
+sys.path.insert(0, str(HUNT.parent))
+import hunt  # noqa: E402
+
 HEALTHY = 'test "$(cat value.txt)" = good'
 
 
@@ -138,7 +141,7 @@ class RegressionHuntTest(unittest.TestCase):
     def test_does_not_touch_the_working_tree(self):
         (self.repo / "notes.txt").write_text("uncommitted edit\n")
         before = git(self.repo, "status", "--porcelain")
-        code, _, stderr = self.hunt(
+        code, stdout, stderr = self.hunt(
             "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY
         )
         self.assertEqual(code, 0, stdout + stderr)
@@ -189,6 +192,43 @@ class RegressionHuntTest(unittest.TestCase):
         code, _, stderr = run_script(HUNT, ["--good", "a", "--bad", "b", "--cmd", "true"], outside)
         self.assertEqual(code, 4)
         self.assertIn("not inside a git repository", stderr)
+
+
+class BisectOutputParsingTest(unittest.TestCase):
+    """Git's console wording differs between releases. Both forms must parse."""
+
+    SHA = "c881dd5361c79d97fd06fc1163c386d8b844c0db"
+
+    def test_parses_the_unquoted_form(self):
+        text = "%s is the first bad commit\n" % self.SHA
+        self.assertEqual(hunt.parse_first_bad(text), self.SHA)
+
+    def test_parses_the_quoted_form_that_newer_git_prints(self):
+        text = "%s is the first 'bad' commit\n" % self.SHA
+        self.assertEqual(hunt.parse_first_bad(text), self.SHA)
+
+    def test_parses_the_bracketed_log_form(self):
+        text = "# first bad commit: [%s] break the value\n" % self.SHA
+        self.assertEqual(hunt.parse_first_bad(text), self.SHA)
+
+    def test_ignores_lines_that_are_not_a_verdict(self):
+        self.assertIsNone(hunt.parse_first_bad("running 'python3 bisect-run.py'\n"))
+
+    def test_parses_probes_from_the_log(self):
+        log = (
+            "# bad: [aaa1111] four\n"
+            "# good: [bbb2222] one\n"
+            "# first bad commit: [aaa1111] four\n"
+        )
+        steps = hunt.parse_bisect_log(log)
+        self.assertEqual([step["result"] for step in steps], ["bad", "good"])
+        self.assertEqual(steps[0]["sha"], "aaa1111")
+        self.assertEqual(steps[1]["subject"], "one")
+
+    def test_parses_probes_when_git_quotes_the_terms(self):
+        log = "# 'bad': [aaa1111] four\n# 'good': [bbb2222] one\n"
+        steps = hunt.parse_bisect_log(log)
+        self.assertEqual([step["result"] for step in steps], ["bad", "good"])
 
 
 if __name__ == "__main__":
