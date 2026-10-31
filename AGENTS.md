@@ -136,6 +136,11 @@ Things that have already caused bugs here. Read before editing.
   empty `files_changed` for a merge is expected, not a bug.
 - **`git blame` on a merge** attributes a conflict-resolution line to the merge
   commit. The report must say so and name the parents.
+- **`git bisect log` opens with two endpoint lines.** The `# bad:` and
+  `# good:` lines before `git bisect start` name the range, not probes.
+  Counting `steps` as probes over-reports by two — that was F1 in
+  `docs/audit-2026-10-31.md`. Endpoints carry `endpoint: true`; keep the count
+  based on `endpoint: false` and the markdown table limited to real probes.
 - **Commit dates in `examples/demo.sh` are fixed** so the hashes in the README
   are stable. Changing the demo's content changes every hash in the README.
 - **ImageMagick renders SVG differently from a browser.** Validate the XML, and

@@ -221,16 +221,30 @@ def parse_first_bad(text):
 
 
 def parse_bisect_log(text):
-    """Turn `git bisect log` into a list of probes."""
+    """Turn `git bisect log` into a list of steps.
+
+    The log opens with one `# bad:` and one `# good:` line naming the endpoints,
+    before the `git bisect start` line. Those are the range, not probes, so they
+    are marked `endpoint` and kept out of the probe count.
+    """
     steps = []
+    started = False
     for line in text.splitlines():
         line = line.strip()
+        if line.startswith("git bisect start"):
+            started = True
+            continue
         match = re.match(
             r"^# ['\"]?(good|bad|skip|old|new)['\"]?: \[([0-9a-f]{7,64})\] (.*)$", line
         )
         if match:
             steps.append(
-                {"result": match.group(1), "sha": match.group(2), "subject": match.group(3)}
+                {
+                    "result": match.group(1),
+                    "sha": match.group(2),
+                    "subject": match.group(3),
+                    "endpoint": not started,
+                }
             )
     return steps
 
@@ -334,7 +348,7 @@ def bisect(repo, good, bad, command, timeout_seconds, keep, force, no_preflight)
                 "command": command,
                 "first_bad": commit_details(repo, first_bad) if first_bad else None,
                 "steps": steps,
-                "probes": len(steps),
+                "probes": sum(1 for step in steps if not step["endpoint"]),
                 "warnings": warnings,
                 "duration_seconds": round(time.time() - started, 2),
                 "worktree": str(worktree.path) if keep else None,
@@ -406,12 +420,13 @@ def render_markdown(report):
         lines.append("```")
         lines.append("")
 
-    if report["steps"]:
+    probes = [step for step in report["steps"] if not step["endpoint"]]
+    if probes:
         lines.append("### Probes")
         lines.append("")
         lines.append("| Result | Commit | Subject |")
         lines.append("| --- | --- | --- |")
-        for step in report["steps"]:
+        for step in probes:
             lines.append("| %s | `%s` | %s |" % (step["result"], step["sha"][:12], step["subject"]))
         lines.append("")
 

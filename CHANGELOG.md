@@ -42,6 +42,18 @@ Found by running `crit-code` over this repository. Full findings in
 - The skill-name test matched a substring anywhere in the file instead of parsing
   the frontmatter.
 
+### Fixed in the 2026-10-31 audit
+
+Found by a verification pass over this repository. Full findings in
+[`docs/audit-2026-10-31.md`](docs/audit-2026-10-31.md).
+
+- `probes` counted the two `# bad:`/`# good:` endpoint lines that `git bisect
+  log` writes before `git bisect start`, so every report over-counted by two.
+  A run that probed three commits said "Probes: 5", and the README capture said
+  four for a two-probe run. Steps now carry `endpoint: true` for the range lines,
+  `probes` counts only real probes, and the markdown table shows only those.
+  The demo images were regenerated from the fixed run.
+
 ### Fixed during the pre-release audit
 
 Bugs found by adversarial testing before the first release. Each has a

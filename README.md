@@ -33,7 +33,7 @@ and the invention is structurally prevented.
 
 A parser regresses between `v0.1.0` and `HEAD`. One command finds the commit:
 
-<img src="docs/regression-hunt.svg" alt="regression-hunt output: first bad commit cc5291f, split durations on colons, 4 probes">
+<img src="docs/regression-hunt.svg" alt="regression-hunt output: first bad commit cc5291f, split durations on colons, 2 probes">
 
 The other skill answers the other question, and refuses to overreach:
 
