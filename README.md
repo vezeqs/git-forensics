@@ -5,7 +5,7 @@ Two questions git does not answer directly. Two agent skills that do.
 | Skill | Question | Guarantee |
 | --- | --- | --- |
 | `regression-hunt` | When did this break? | Bisects in a throwaway worktree. Your checkout is never touched. |
-| `blame-archaeology` | Why does this line exist? | Traces the line to a commit, a pull request, and an issue, and labels what it could not find. |
+| `blame-archaeology` | Why does this line exist? | Traces the line to its commit and, when available, the pull request behind it. Labels what it could not find. |
 
 Neither skill guesses. When the evidence runs out, they say so.
 
@@ -13,10 +13,10 @@ Neither skill guesses. When the evidence runs out, they say so.
 
 Agents are good at reading code and bad at two specific things.
 
-**Bisecting.** `git bisect` mutates the working tree, refuses to start on a
-dirty checkout, and leaves the repository mid-bisect when a probe hangs or the
-agent loses track. An agent that runs it in your checkout can destroy uncommitted
-work, and often does.
+**Bisecting.** `git bisect` checks out commits in your working tree, so
+uncommitted changes either block the checkout or are stranded when the run ends.
+If a probe hangs or the agent loses track, the repository stays mid-bisect and
+the next command runs against whatever commit is checked out.
 
 **Explaining history.** Asked why a line exists, an agent will produce a
 confident paragraph about intent that no commit supports. The commit subject says
@@ -38,19 +38,19 @@ $ python3 skills/regression-hunt/scripts/hunt.py \
 
 # Regression hunt
 
-- Good: `a9985f14044f`
-- Bad: `eecc7b526edc`
-- Probes: 3
+- Good: `2221b549980d`
+- Bad: `78de2f1fab10`
+- Probes: 4
 
 ## First bad commit
 
-`fbfdd8287759` split durations on colons
+`394b7f2c109b` split durations on colons
 
 | Field | Value |
 | --- | --- |
 | Author | Ada Lovelace <ada@example.com> |
-| Date | 2026-10-30T22:45:57-05:00 |
-| Parents | a9985f14044f |
+| Date | 2026-03-02T09:00:00Z |
+| Parents | a07fce02df6c |
 
 ### Files changed
 
@@ -63,7 +63,7 @@ The command is wrong? The tool tells you before it wastes ten minutes:
 
 ```console
 $ python3 skills/regression-hunt/scripts/hunt.py --good v0.1.0 --bad HEAD --cmd "pytest -q"
-error: the command fails at --good (a9985f14044f) with exit 1. Bisecting a
+error: the command fails at --good (2221b549980d) with exit 1. Bisecting a
 command that already fails at the good endpoint gives a meaningless answer.
 Pass --force to run anyway.
 ```
@@ -75,7 +75,7 @@ $ python3 skills/blame-archaeology/scripts/archaeology.py src/parser.py:4
 
 ## Fact: introduced by
 
-`fbfdd8287759` split durations on colons
+`394b7f2c109b` split durations on colons
 
 | Field | Value |
 | --- | --- |
@@ -105,6 +105,7 @@ runs both skills against it:
 ./examples/demo.sh
 ```
 
+The commit dates are fixed, so the hashes in the output match the ones above.
 No network, no fixtures, nothing left behind.
 
 ## Install
@@ -170,13 +171,13 @@ and
 - **Shallow clones.** The range may be incomplete. The tool warns, but cannot
   repair it.
 - **Submodules.** They are not initialized in the worktree, so a command that
-  needs them fails everywhere and reads as "bad" at every commit.
+  needs them fails at both endpoints and the preflight refuses the range. Run
+  `git submodule update --init` inside the kept worktree if you need them.
 - **Squashed history.** If the repository was imported as one commit, there is
   no archaeology to do. The skill reports a gap rather than reconstructing a
   plausible past.
-- **Merge attribution.** A line that arrived through a merge is blamed on the
-  merge commit's parents, not on the person who clicked merge. The report names
-  the parents.
+- **Merge attribution.** Blame follows a line into one parent. A change made
+  while resolving a conflict is attributed to the merge, not to whoever wrote it.
 
 ## Development
 

@@ -108,8 +108,8 @@ Rules for the report:
   tree and leaves the repository in a bisecting state if it fails.
 - Never pass `--force` to get past a preflight failure unless the user has
   explicitly asked to bisect a range you warned them about.
-- Do not clean up `.git/forensics` or any worktree by hand. The script removes
-  what it created.
+- Do not remove the worktree or prune worktrees by hand. The script removes
+  what it created, including on error and on Ctrl-C.
 - Do not run this on a shallow clone without saying so. The range may be
   incomplete and the answer will look authoritative while being wrong.
 
