@@ -33,7 +33,7 @@ class RegressionHuntTest(unittest.TestCase):
         code, stdout, stderr = self.hunt(
             "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY
         )
-        self.assertEqual(code, 0, stderr)
+        self.assertEqual(code, 0, stdout + stderr)
         self.assertIn(self.breaking[:12], stdout)
         self.assertIn("break the value", stdout)
         self.assertIn("## First bad commit", stdout)
@@ -51,7 +51,7 @@ class RegressionHuntTest(unittest.TestCase):
         code, stdout, stderr = self.hunt(
             "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY, "--json"
         )
-        self.assertEqual(code, 0, stderr)
+        self.assertEqual(code, 0, stdout + stderr)
         report = json.loads(stdout)
         self.assertEqual(report["schema"], "git-forensics/regression-hunt/v1")
         self.assertEqual(report["first_bad"]["sha"], self.breaking)
@@ -141,7 +141,7 @@ class RegressionHuntTest(unittest.TestCase):
         code, _, stderr = self.hunt(
             "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY
         )
-        self.assertEqual(code, 0, stderr)
+        self.assertEqual(code, 0, stdout + stderr)
         self.assertEqual(git(self.repo, "status", "--porcelain"), before)
         self.assertEqual((self.repo / "notes.txt").read_text(), "uncommitted edit\n")
         self.assertEqual(git(self.repo, "rev-parse", "--abbrev-ref", "HEAD"), "main")
@@ -153,7 +153,7 @@ class RegressionHuntTest(unittest.TestCase):
             "--good", self.first_good, "--bad", self.head,
             "--cmd", 'echo dirty > value.txt; test "$(git show HEAD:value.txt)" = "good"',
         )
-        self.assertEqual(code, 0, stderr)
+        self.assertEqual(code, 0, stdout + stderr)
         self.assertIn(self.breaking[:12], stdout)
 
     def test_a_killed_probe_is_a_skip_not_a_verdict(self):
