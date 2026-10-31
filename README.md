@@ -140,10 +140,16 @@ no fixtures, nothing left behind.
 ## Development
 
 ```sh
-make check     # validator + 51 tests
+make check     # validator and the full test suite
 make test      # tests only
 make validate  # SKILL.md conformance only
 make assets    # regenerate the images in docs/
+```
+
+`make assets` needs Pillow and the DejaVu Sans Mono font:
+
+```sh
+python3 -m pip install -r requirements-dev.txt
 ```
 
 The suite creates real repositories in a temp directory and drives the scripts

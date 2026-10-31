@@ -58,7 +58,7 @@ pass, so fix the tests too.
 | `tools/render_assets.py` | Generates `docs/` from `examples/demo.sh`. |
 | `tests/` | Behavioural tests. They create real repositories. |
 | `examples/demo.sh` | Builds a broken repository and runs both skills. |
-| `docs/` | Generated images. Do not edit by hand. |
+| `docs/` | Generated images and the audit record. Do not edit the images by hand. |
 
 ## Commands
 
@@ -67,6 +67,12 @@ make validate   # SKILL.md conformance
 make test       # behavioural tests
 make check      # both, and what CI runs
 make assets     # regenerate docs/ from a real demo run
+```
+
+`make assets` needs Pillow and the DejaVu Sans Mono font:
+
+```sh
+python3 -m pip install -r requirements-dev.txt
 ```
 
 ## Changing a skill
@@ -120,6 +126,12 @@ Things that have already caused bugs here. Read before editing.
   `git bisect log` line first, keep the console patterns tolerant, and keep
   unit tests for both forms. This exact difference made every CI run report no
   verdict while local runs passed.
+- **`git show --numstat` quotes paths.** `core.quotePath` is on by default, so a
+  file named `café.txt` comes back as `"caf\303\251.txt"`, which is not a path
+  you can open. Read `--numstat -z` instead: raw, NUL-separated, and renames
+  arrive as `added<TAB>removed<TAB>NULoldNULnewNUL`.
+- **`docs/` is written through a staging directory.** A failed render must not
+  leave fresh SVGs next to a stale GIF. Do not write into `docs/` directly.
 - **`git show --numstat` on a merge commit prints nothing** without `-m`. An
   empty `files_changed` for a merge is expected, not a bug.
 - **`git blame` on a merge** attributes a conflict-resolution line to the merge

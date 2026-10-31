@@ -4,7 +4,7 @@ help:
 	@echo "make validate  check every SKILL.md against the spec"
 	@echo "make test      run the behavioural test suite"
 	@echo "make check     both"
-	@echo "make assets    regenerate the README images in docs/"
+	@echo "make assets    regenerate the README images in docs/ (needs Pillow)"
 	@echo "make clean     remove __pycache__"
 
 validate:

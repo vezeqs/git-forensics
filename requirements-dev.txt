@@ -1,0 +1,3 @@
+# Build-time only. The skills themselves use the Python standard library.
+# Pinned so `make assets` produces byte-identical images across machines.
+pillow==11.1.0

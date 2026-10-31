@@ -14,8 +14,10 @@ Usage: python3 tools/render_assets.py
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -204,8 +206,18 @@ def gif_capture(lines, path, font_size=15, line_height=22):
 
 
 def main():
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        raise SystemExit(
+            "Pillow is required to render the images:\n"
+            "  python3 -m pip install -r requirements-dev.txt"
+        )
     if not FONT_PATH.exists():
-        raise SystemExit("missing font: %s" % FONT_PATH)
+        raise SystemExit(
+            "missing font: %s\nInstall the DejaVu fonts (package: fonts-dejavu)." % FONT_PATH
+        )
+
     DOCS.mkdir(exist_ok=True)
 
     sections = split_sections(capture())
@@ -225,13 +237,23 @@ def main():
         "$ python3 scripts/hunt.py --good v0.1.0 --bad HEAD --cmd 'python3 check.py'",
         "",
     ]
-    written = [
-        svg_capture("regression-hunt", prompt + hunt, DOCS / "regression-hunt.svg"),
-        svg_capture("blame-archaeology", blame, DOCS / "blame-archaeology.svg"),
-        svg_capture("preflight", preflight, DOCS / "preflight.svg"),
-        gif_capture(prompt + hunt, DOCS / "demo.gif"),
-    ]
-    for path in written:
+
+    # Render into a staging directory and move files into place only when every
+    # image succeeded, so a failure cannot leave docs/ half-regenerated.
+    staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=str(DOCS)))
+    names = ("regression-hunt.svg", "blame-archaeology.svg", "preflight.svg", "demo.gif")
+    try:
+        svg_capture("regression-hunt", prompt + hunt, staging / names[0])
+        svg_capture("blame-archaeology", blame, staging / names[1])
+        svg_capture("preflight", preflight, staging / names[2])
+        gif_capture(prompt + hunt, staging / names[3])
+        for name in names:
+            (staging / name).replace(DOCS / name)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+
+    for name in names:
+        path = DOCS / name
         print("%s (%d bytes)" % (path.relative_to(REPO_ROOT), path.stat().st_size))
     return 0
 
