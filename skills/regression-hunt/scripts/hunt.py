@@ -235,24 +235,46 @@ def parse_bisect_log(text):
     return steps
 
 
+def parse_numstat(text):
+    """Parse `git show --numstat -z` output into file records.
+
+    With -z, paths are raw rather than quoted by core.quotePath, and records are
+    NUL-terminated. A rename is emitted as `added<TAB>removed<TAB>NULoldNULnewNUL`.
+    """
+    records = text.split("\0")
+    files = []
+    index = 0
+    while index < len(records):
+        record = records[index]
+        index += 1
+        if not record.strip():
+            continue
+        parts = record.split("\t")
+        if len(parts) != 3:
+            continue
+        added, removed, path = (part.strip() for part in parts)
+        if path == "" and index + 1 < len(records):
+            old = records[index]
+            new = records[index + 1]
+            index += 2
+            path = "%s => %s" % (old, new)
+        files.append(
+            {
+                "path": path,
+                "added": None if added == "-" else int(added),
+                "removed": None if removed == "-" else int(removed),
+            }
+        )
+    return files
+
+
 def commit_details(repo, sha):
     fmt = "%H%x00%an%x00%ae%x00%aI%x00%s"
     raw = out(repo, "show", "-s", "--format=" + fmt, sha)
     sha_full, author, email, date, subject = raw.split("\0", 4)
 
-    numstat = git(repo, "show", "--numstat", "--format=", sha, check=False).stdout
-    files = []
-    for line in numstat.splitlines():
-        parts = line.split("\t")
-        if len(parts) == 3:
-            added, removed, name = parts
-            files.append(
-                {
-                    "path": name,
-                    "added": None if added == "-" else int(added),
-                    "removed": None if removed == "-" else int(removed),
-                }
-            )
+    numstat = git(repo, "show", "--numstat", "-z", "--format=", sha, check=False).stdout
+    files = parse_numstat(numstat)
 
     body = git(repo, "show", "-s", "--format=%b", sha, check=False).stdout.strip()
 
@@ -277,6 +299,8 @@ def bisect(repo, good, bad, command, timeout_seconds, keep, force, no_preflight)
 
     try:
         with Worktree(repo, bad, keep=keep) as worktree:
+            if keep:
+                print("worktree: %s" % worktree.path, file=sys.stderr)
             if not no_preflight:
                 warnings.extend(preflight(worktree, wrapper, good, bad, timeout_seconds, force))
 

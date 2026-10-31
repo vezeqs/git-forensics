@@ -179,6 +179,15 @@ class RegressionHuntTest(unittest.TestCase):
             report["warnings"],
         )
 
+    def test_keep_prints_the_worktree_path_when_preflight_fails(self):
+        code, stdout, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", "true", "--keep"
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("worktree:", stderr)
+        path = stderr.split("worktree:", 1)[1].strip().splitlines()[0]
+        self.addCleanup(lambda: git(self.repo, "worktree", "remove", "--force", path))
+
     def test_empty_command_is_rejected(self):
         code, _, stderr = self.hunt(
             "--good", self.first_good, "--bad", self.head, "--cmd", "   "
@@ -192,6 +201,28 @@ class RegressionHuntTest(unittest.TestCase):
         code, _, stderr = run_script(HUNT, ["--good", "a", "--bad", "b", "--cmd", "true"], outside)
         self.assertEqual(code, 4)
         self.assertIn("not inside a git repository", stderr)
+
+
+class CommitDetailsTest(unittest.TestCase):
+    """The file list must contain paths a caller can use, not git's display form."""
+
+    def test_reports_non_ascii_paths_unquoted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = init_repo(Path(tmp) / "repo")
+            commit(repo, "add a non-ascii name", {"café.txt": "a\nb\n"})
+            sha = git(repo, "rev-parse", "HEAD")
+            details = hunt.commit_details(repo, sha)
+            self.assertEqual(details["files_changed"][0]["path"], "café.txt")
+
+    def test_reports_a_rename_with_both_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = init_repo(Path(tmp) / "repo")
+            commit(repo, "add a file", {"old.txt": "a\nb\n"})
+            git(repo, "mv", "old.txt", "new.txt")
+            git(repo, "commit", "-q", "-m", "rename it")
+            sha = git(repo, "rev-parse", "HEAD")
+            details = hunt.commit_details(repo, sha)
+            self.assertEqual(details["files_changed"][0]["path"], "old.txt => new.txt")
 
 
 class BisectOutputParsingTest(unittest.TestCase):
