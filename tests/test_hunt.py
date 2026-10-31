@@ -65,6 +65,10 @@ class RegressionHuntTest(unittest.TestCase):
         self.assertIsNone(report["worktree"])
         self.assertGreaterEqual(report["probes"], 1)
         self.assertEqual(
+            report["probes"], sum(1 for step in report["steps"] if not step["endpoint"])
+        )
+        self.assertEqual(sum(1 for step in report["steps"] if step["endpoint"]), 2)
+        self.assertEqual(
             [entry["path"] for entry in report["first_bad"]["files_changed"]], ["value.txt"]
         )
 
@@ -260,6 +264,19 @@ class BisectOutputParsingTest(unittest.TestCase):
         log = "# 'bad': [aaa1111] four\n# 'good': [bbb2222] one\n"
         steps = hunt.parse_bisect_log(log)
         self.assertEqual([step["result"] for step in steps], ["bad", "good"])
+
+    def test_marks_the_endpoint_lines_and_counts_only_probes(self):
+        log = (
+            "# bad: [aaa1111] four\n"
+            "# good: [bbb2222] one\n"
+            "git bisect start 'HEAD' 'HEAD~3'\n"
+            "# good: [ccc3333] two\n"
+            "# bad: [ddd4444] three\n"
+            "# first bad commit: [ddd4444] three\n"
+        )
+        steps = hunt.parse_bisect_log(log)
+        self.assertEqual([step["result"] for step in steps], ["bad", "good", "good", "bad"])
+        self.assertEqual([step["endpoint"] for step in steps], [True, True, False, False])
 
 
 if __name__ == "__main__":

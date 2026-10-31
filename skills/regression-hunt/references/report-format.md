@@ -22,8 +22,12 @@ data as markdown.
     "files_changed": [{"path": "value.txt", "added": 1, "removed": 1}],
     "parents": ["619617e7579f..."]
   },
-  "steps": [{"result": "bad", "sha": "4b2ca3b45998", "subject": "unrelated work"}],
-  "probes": 3,
+  "steps": [
+    {"result": "bad", "sha": "4b2ca3b45998", "subject": "unrelated work", "endpoint": true},
+    {"result": "good", "sha": "619617e7579f", "subject": "add the value", "endpoint": true},
+    {"result": "bad", "sha": "23ff297739d3", "subject": "break the value", "endpoint": false}
+  ],
+  "probes": 1,
   "warnings": [],
   "duration_seconds": 0.1,
   "worktree": null,
@@ -41,8 +45,8 @@ data as markdown.
 | `first_bad` | object or null | Null when no verdict was reached. |
 | `first_bad.files_changed` | array | `added` and `removed` are null for binary files. |
 | `first_bad.parents` | array | Empty for a root commit. More than one entry means a merge. |
-| `steps` | array | Parsed from `git bisect log`. `result` is `good`, `bad`, or `skip`. |
-| `probes` | int | Length of `steps`. |
+| `steps` | array | Parsed from `git bisect log`. `result` is `good`, `bad`, or `skip`. `endpoint` is `true` for the two lines that name the range, `false` for a probe. |
+| `probes` | int | Number of probes actually run: `steps` with `endpoint: false`. |
 | `warnings` | array | Non-fatal problems: skipped endpoints, shallow clone. |
 | `duration_seconds` | float | Wall clock for the whole run, including preflight. |
 | `worktree` | string or null | Path when `--keep` was used, otherwise null. |
