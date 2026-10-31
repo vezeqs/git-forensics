@@ -1,0 +1,165 @@
+"""Behavioural tests for skills/regression-hunt/scripts/hunt.py."""
+
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from helpers import HUNT, commit, git, init_repo, run_script  # noqa: E402
+
+HEALTHY = 'test "$(cat value.txt)" = good'
+
+
+class RegressionHuntTest(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = init_repo(Path(self._tmp.name) / "repo")
+
+        self.first_good = commit(self.repo, "add the value", {"value.txt": "good\n"})
+        self.still_good = commit(self.repo, "add notes", {"notes.txt": "one\n"})
+        self.breaking = commit(self.repo, "break the value", {"value.txt": "bad\n"})
+        self.head = commit(self.repo, "more notes", {"notes.txt": "two\n"})
+
+    def hunt(self, *args):
+        return run_script(HUNT, list(args), self.repo)
+
+    def test_finds_the_breaking_commit(self):
+        code, stdout, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assertIn(self.breaking[:12], stdout)
+        self.assertIn("break the value", stdout)
+        self.assertIn("## First bad commit", stdout)
+
+    def test_reports_probes_from_the_bisect_log(self):
+        code, stdout, _ = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("### Probes", stdout)
+        self.assertIn(self.head[:12], stdout)
+        self.assertIn(self.first_good[:12], stdout)
+
+    def test_json_report_has_the_documented_schema(self):
+        code, stdout, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY, "--json"
+        )
+        self.assertEqual(code, 0, stderr)
+        report = json.loads(stdout)
+        self.assertEqual(report["schema"], "git-forensics/regression-hunt/v1")
+        self.assertEqual(report["first_bad"]["sha"], self.breaking)
+        self.assertEqual(report["first_bad"]["subject"], "break the value")
+        self.assertEqual(report["good"], self.first_good)
+        self.assertEqual(report["bad"], self.head)
+        self.assertEqual(report["command"], HEALTHY)
+        self.assertIsNone(report["worktree"])
+        self.assertGreaterEqual(report["probes"], 1)
+        self.assertEqual(
+            [entry["path"] for entry in report["first_bad"]["files_changed"]], ["value.txt"]
+        )
+
+    def test_refuses_when_the_command_passes_at_bad(self):
+        code, _, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", "true"
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("succeeds at --bad", stderr)
+
+    def test_refuses_when_the_command_fails_at_good(self):
+        code, _, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", "false"
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("fails at --good", stderr)
+
+    def test_force_overrides_preflight(self):
+        # With a command that passes everywhere, git marks every midpoint good
+        # and reports the bad endpoint as the first bad commit. That answer is
+        # meaningless, which is exactly why preflight refuses without --force.
+        code, stdout, _ = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", "true", "--force"
+        )
+        self.assertEqual(code, 0)
+        self.assertIn(self.head[:12], stdout)
+
+    def test_rejects_a_good_revision_that_is_not_an_ancestor(self):
+        code, _, stderr = self.hunt(
+            "--good", self.head, "--bad", self.first_good, "--cmd", HEALTHY
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("is not an ancestor", stderr)
+
+    def test_rejects_identical_endpoints(self):
+        code, _, stderr = self.hunt(
+            "--good", self.head, "--bad", self.head, "--cmd", HEALTHY
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("same commit", stderr)
+
+    def test_rejects_an_unknown_revision(self):
+        code, _, stderr = self.hunt(
+            "--good", "does-not-exist", "--bad", self.head, "--cmd", HEALTHY
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("unknown revision", stderr)
+
+    def test_timeouts_are_skips_not_verdicts(self):
+        code, stdout, _ = self.hunt(
+            "--good", self.first_good, "--bad", self.head,
+            "--cmd", "sleep 5", "--timeout", "0.2", "--no-preflight",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("No first bad commit", stdout)
+
+    def test_leaves_no_worktree_behind(self):
+        self.hunt("--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY)
+        listed = git(self.repo, "worktree", "list")
+        self.assertEqual(len(listed.splitlines()), 1, listed)
+
+    def test_keep_preserves_the_worktree(self):
+        code, stdout, _ = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY, "--keep"
+        )
+        self.assertEqual(code, 0)
+        listed = git(self.repo, "worktree", "list")
+        self.assertEqual(len(listed.splitlines()), 2, listed)
+        kept = [line for line in listed.splitlines() if "git-forensics-bisect-" in line]
+        self.assertTrue(kept, listed)
+        path = Path(kept[0].split()[0])
+        self.addCleanup(lambda: git(self.repo, "worktree", "remove", "--force", str(path)))
+
+    def test_does_not_touch_the_working_tree(self):
+        (self.repo / "notes.txt").write_text("uncommitted edit\n")
+        before = git(self.repo, "status", "--porcelain")
+        code, _, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", HEALTHY
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), before)
+        self.assertEqual((self.repo / "notes.txt").read_text(), "uncommitted edit\n")
+        self.assertEqual(git(self.repo, "rev-parse", "--abbrev-ref", "HEAD"), "main")
+
+    def test_empty_command_is_rejected(self):
+        code, _, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head, "--cmd", "   "
+        )
+        self.assertEqual(code, 4)
+        self.assertIn("--cmd is empty", stderr)
+
+    def test_outside_a_repository_is_rejected(self):
+        outside = Path(self._tmp.name) / "outside"
+        outside.mkdir()
+        code, _, stderr = run_script(HUNT, ["--good", "a", "--bad", "b", "--cmd", "true"], outside)
+        self.assertEqual(code, 4)
+        self.assertIn("not inside a git repository", stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()
