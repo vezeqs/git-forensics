@@ -18,6 +18,7 @@ twenty that half-work.
 | `skills/<name>/references/` | Detail loaded only when a task needs it. |
 | `tools/validate_skills.py` | Spec conformance for this repository. |
 | `tests/` | Behavioural tests. They create real repositories. |
+| `examples/demo.sh` | Builds a broken repository and runs both skills. Kept working by a test. |
 
 ## House rules
 

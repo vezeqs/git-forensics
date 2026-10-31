@@ -48,5 +48,19 @@ class SkillFilesTest(unittest.TestCase):
             self.assertIn("usage:", proc.stderr.lower() + proc.stdout.lower(), script)
 
 
+    def test_demo_script_runs_end_to_end(self):
+        demo = REPO_ROOT / "examples" / "demo.sh"
+        proc = subprocess.run(
+            ["sh", str(demo)],
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr[-2000:])
+        self.assertIn("First bad commit", proc.stdout)
+        self.assertIn("Fact: introduced by", proc.stdout)
+        self.assertIn("fails at --good", proc.stdout + proc.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

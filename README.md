@@ -96,6 +96,17 @@ reason appears under `Gaps` instead of a guess.
 Every section is either `Fact` (read from git) or `Inference` (an association
 that may be wrong). `Gaps` is not a failure state; it is the answer being honest.
 
+## Reproduce this
+
+The demo above is a script. It builds the repository, breaks the parser, and
+runs both skills against it:
+
+```sh
+./examples/demo.sh
+```
+
+No network, no fixtures, nothing left behind.
+
 ## Install
 
 Any client that discovers `skills/<name>/SKILL.md` works: Claude Code, Codex,
@@ -170,7 +181,7 @@ and
 ## Development
 
 ```sh
-make check     # validator + 33 tests
+make check     # validator + 34 tests
 make test      # tests only
 make validate  # SKILL.md conformance only
 ```
