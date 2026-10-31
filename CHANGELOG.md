@@ -23,6 +23,25 @@ First release: two skills, `regression-hunt` and `blame-archaeology`.
   all derived from that run.
 - A test that fails when `docs/` is older than the demo output.
 
+### Fixed in the 2026-10-30 audit
+
+Found by running `crit-code` over this repository. Full findings in
+[`docs/audit-2026-10-30.md`](docs/audit-2026-10-30.md).
+
+- `files_changed[].path` returned git's quoted display form (`"caf\303\251.txt"`)
+  for any non-ASCII filename, which is not a usable path. The report now reads
+  `--numstat -z` and emits raw paths, with renames as `old => new`.
+- `make assets` wrote the SVGs before importing Pillow for the GIF, so a missing
+  dependency left `docs/` half-regenerated with a stale GIF. It now checks the
+  dependency first, renders into a staging directory, and moves files into place
+  only when every image succeeded.
+- `--keep` did not report where the worktree was when the preflight refused,
+  leaving it in a random temp directory.
+- The README advertised a test count that had gone stale; it no longer states one.
+- Pillow was an undeclared build dependency. `requirements-dev.txt` pins it.
+- The skill-name test matched a substring anywhere in the file instead of parsing
+  the frontmatter.
+
 ### Fixed during the pre-release audit
 
 Bugs found by adversarial testing before the first release. Each has a

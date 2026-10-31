@@ -13,6 +13,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from helpers import REPO_ROOT  # noqa: E402
 
+sys.path.insert(0, str(REPO_ROOT / "tools"))
+import validate_skills as vs  # noqa: E402
+
 SKILLS_ROOT = REPO_ROOT / "skills"
 VALIDATOR = REPO_ROOT / "tools" / "validate_skills.py"
 
@@ -27,10 +30,13 @@ class SkillFilesTest(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_every_skill_has_a_matching_directory_name(self):
+    def test_every_skill_frontmatter_name_matches_its_directory(self):
         for skill_dir in sorted(p for p in SKILLS_ROOT.iterdir() if p.is_dir()):
-            text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
-            self.assertIn("name: %s" % skill_dir.name, text, skill_dir)
+            path = skill_dir / "SKILL.md"
+            errors = []
+            data, _ = vs.parse_frontmatter(path.read_text(encoding="utf-8"), path, errors)
+            self.assertEqual(errors, [], skill_dir)
+            self.assertEqual(data.get("name"), skill_dir.name, skill_dir)
 
     def test_scripts_compile(self):
         for script in sorted(SKILLS_ROOT.glob("*/scripts/*.py")):
