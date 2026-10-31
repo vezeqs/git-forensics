@@ -134,6 +134,7 @@ def commit_metadata(repo, sha):
     parts = raw.split("\0")
     while len(parts) < 6:
         parts.append("")
+    parents = out(repo, "rev-list", "--parents", "-n", "1", sha).split()[1:]
     return {
         "sha": parts[0],
         "author": parts[1],
@@ -141,6 +142,7 @@ def commit_metadata(repo, sha):
         "date": parts[3],
         "subject": parts[4],
         "body": parts[5].strip(),
+        "parents": parents,
     }
 
 
@@ -283,6 +285,8 @@ def issue_references(texts):
 def investigate(repo, path, line_number, radius, skip_pr):
     gaps = []
     absolute = (repo / path).resolve()
+    if absolute.is_dir():
+        raise UsageError("%s is a directory, not a file" % path)
     if not absolute.exists():
         raise UsageError("no such file: %s" % path)
 
@@ -324,6 +328,8 @@ def investigate(repo, path, line_number, radius, skip_pr):
 
     blamed_path = blame["filename"] or path
     report["context"] = line_context(repo, blame["sha"], blamed_path, blame["original_line"], radius)
+    if report["context"] is None:
+        gaps.append("the file is binary or unreadable at that commit, so the line is not shown")
     report["renames"] = rename_trail(repo, path)
 
     slug = None if skip_pr else github_repo(repo)
@@ -379,6 +385,17 @@ def render_markdown(report):
     lines.append("| Path at the time | `%s` |" % (report["blame"]["filename"] or target["path"]))
     lines.append("| Line at the time | %d |" % report["blame"]["original_line"])
     lines.append("")
+
+    if len(commit["parents"]) > 1:
+        lines.append(
+            "This is a merge commit with %d parents. The line was introduced while"
+            % len(commit["parents"])
+        )
+        lines.append("resolving the merge, so it belongs to the merge, not to either side.")
+        lines.append("")
+        for parent in commit["parents"]:
+            lines.append("- parent `%s`" % parent[:12])
+        lines.append("")
 
     if commit["body"]:
         lines.append("### Commit message")

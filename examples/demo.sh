@@ -18,7 +18,7 @@ export GIT_CONFIG_SYSTEM=/dev/null
 
 cd "$WORK"
 git init -q -b main
-mkdir -p src tests
+mkdir -p src
 
 cat > src/parser.py <<'PY'
 def parse_duration(text):
@@ -30,6 +30,15 @@ def parse_duration(text):
         elif part.endswith("m"):
             total += int(part[:-1])
     return total
+PY
+
+# The regression test. Exits 0 while parse_duration is correct.
+cat > check.py <<'PY'
+import sys
+
+from src.parser import parse_duration
+
+sys.exit(0 if parse_duration("1h 30m") == 90 else 1)
 PY
 
 git add . && git commit -qm "add a duration parser"
@@ -47,12 +56,10 @@ echo "Repository: $WORK"
 git log --oneline | cat
 echo
 
-CHECK='python3 -c "from src.parser import parse_duration; raise SystemExit(0 if parse_duration(\"1h 30m\") == 90 else 1)"'
-
 echo "== regression-hunt: which commit broke parse_duration? =="
 echo
 python3 "$ROOT/skills/regression-hunt/scripts/hunt.py" \
-    --good v0.1.0 --bad HEAD --cmd "$CHECK"
+    --good v0.1.0 --bad HEAD --cmd "python3 check.py"
 echo
 
 echo "== blame-archaeology: why does this line exist? =="
@@ -63,4 +70,4 @@ echo
 echo "== regression-hunt: what happens with a command that is broken everywhere? =="
 echo
 python3 "$ROOT/skills/regression-hunt/scripts/hunt.py" \
-    --good v0.1.0 --bad HEAD --cmd "python3 -m pytest -q" || true
+    --good v0.1.0 --bad HEAD --cmd "python3 -m pytest -q" 2>&1 || true

@@ -35,26 +35,41 @@ def parse_frontmatter(text, path, errors):
         return {}, text
     raw = text[4:end]
     body = text[end + 5 :]
-    data = {}
-    key = None
+
+    entries = []
     for number, line in enumerate(raw.splitlines(), start=2):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
-        if line.startswith("  "):
-            if key is None:
+        if line.startswith((" ", "\t")):
+            if not entries:
                 errors.append("%s:%d: indented value without a parent key" % (path, number))
                 continue
-            data.setdefault(key + "__map", []).append(line.strip())
+            entries[-1][2].append(line)
             continue
         if ":" not in line:
             errors.append("%s:%d: expected 'key: value'" % (path, number))
             continue
         key, _, value = line.partition(":")
-        key = key.strip()
-        value = value.strip()
-        if value.startswith(('"', "'")) and value.endswith(('"', "'")) and len(value) > 1:
-            value = value[1:-1]
-        data[key] = value
+        entries.append([key.strip(), value.strip(), [], number])
+
+    data = {}
+    for key, value, block, _ in entries:
+        if value in (">", "|", ">-", "|-", ">+", "|+"):
+            if value.startswith(">"):
+                data[key] = " ".join(line.strip() for line in block if line.strip())
+            else:
+                indent = min(
+                    (len(line) - len(line.lstrip()) for line in block if line.strip()),
+                    default=0,
+                )
+                data[key] = "\n".join(line[indent:] for line in block)
+        elif block:
+            data[key] = value
+            data[key + "__map"] = [line.strip() for line in block]
+        else:
+            if len(value) > 1 and value[0] == value[-1] and value[0] in "\"'":
+                value = value[1:-1]
+            data[key] = value
     return data, body
 
 

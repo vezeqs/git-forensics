@@ -27,7 +27,8 @@ printed as markdown.
     "email": "t@example.com",
     "date": "2026-10-30T22:44:48-05:00",
     "subject": "add the parser skeleton",
-    "body": ""
+    "body": "",
+    "parents": ["1f158f2042a4..."]
   },
   "context": [{"number": 2, "text": "beta", "is_target": false}],
   "renames": [{"sha": "c6fb2a41ba1f...", "date": "2026-10-30", "subject": "rename parser",
@@ -49,6 +50,7 @@ printed as markdown.
 | `blame.filename` | Path at the blamed commit, before any rename. |
 | `blame.previous` | `{sha, path}` when git recorded a previous location. Null otherwise. |
 | `commit` | Metadata for `blame.sha`. Null when the line is uncommitted. |
+| `commit.parents` | Full SHAs of the parents. More than one means a merge commit, which the markdown report calls out. |
 | `context` | Lines around the target as they were at the blamed commit. |
 | `renames` | Rename commits for the path, newest first. Empty when none. |
 | `pull_request` | First PR GitHub associates with the commit. Null when absent. |

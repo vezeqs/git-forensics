@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -10,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from helpers import ARCHAEOLOGY, commit, git, init_repo, run_script  # noqa: E402
+from helpers import ARCHAEOLOGY, ISOLATED_ENV, commit, git, init_repo, run_script  # noqa: E402
 
 sys.path.insert(0, str(ARCHAEOLOGY.parent))
 import archaeology  # noqa: E402
@@ -72,6 +73,11 @@ class BlameArchaeologyTest(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("no committed history", stdout)
         self.assertIn("uncommitted", stdout)
+
+    def test_rejects_a_directory(self):
+        code, _, stderr = self.dig("src:1")
+        self.assertEqual(code, 4)
+        self.assertIn("is a directory", stderr)
 
     def test_rejects_an_untracked_file(self):
         (self.repo / "src" / "new.txt").write_text("one\ntwo\n")
@@ -139,6 +145,33 @@ class PullRequestPayloadTest(unittest.TestCase):
     def test_unexpected_shape_raises(self):
         with self.assertRaises(ValueError):
             archaeology.parse_pull_request_payload('{"message": "Not Found"}')
+
+
+    def test_flags_a_merge_commit_and_names_its_parents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = init_repo(Path(tmp) / "merge")
+            commit(repo, "base", {"f.txt": "a\nb\nc\n"})
+            git(repo, "checkout", "-q", "-b", "side")
+            commit(repo, "side change", {"f.txt": "a\nside\nc\n"})
+            git(repo, "checkout", "-q", "main")
+            commit(repo, "main change", {"f.txt": "a\nmain\nc\n"})
+            subprocess.run(
+                ["git", "merge", "side", "-m", "merge side"],
+                cwd=str(repo),
+                capture_output=True,
+                env=ISOLATED_ENV,
+            )
+            (repo / "f.txt").write_text("a\nresolved\nc\n")
+            git(repo, "add", "f.txt")
+            git(repo, "commit", "-q", "-m", "merge side")
+
+            code, stdout, stderr = run_script(ARCHAEOLOGY, ["f.txt:2", "--no-pr"], repo)
+            self.assertEqual(code, 0, stderr)
+            self.assertIn("merge commit with 2 parents", stdout)
+
+            code, stdout, _ = run_script(ARCHAEOLOGY, ["f.txt:2", "--no-pr", "--json"], repo)
+            report = json.loads(stdout)
+            self.assertEqual(len(report["commit"]["parents"]), 2)
 
 
 if __name__ == "__main__":

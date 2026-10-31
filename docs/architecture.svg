@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="430" viewBox="0 0 940 430" role="img" aria-label="The bisect runs in a throwaway worktree, not in your checkout">
+  <rect x="0.5" y="0.5" width="939" height="429" rx="10" fill="#0d1117" stroke="#30363d"/>
+
+  <text x="30" y="40" font-family="ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif" font-size="17" font-weight="600" fill="#e6edf3">Where the bisect runs</text>
+
+  <!-- your checkout -->
+  <rect x="30" y="70" width="300" height="250" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="52" y="102" font-family="ui-sans-serif,system-ui,sans-serif" font-size="14" font-weight="600" fill="#e6edf3">Your checkout</text>
+  <text x="52" y="136" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="13" fill="#8b949e">branch    main</text>
+  <text x="52" y="160" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="13" fill="#8b949e">index     whatever you left</text>
+  <text x="52" y="184" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="13" fill="#8b949e">uncommitted  kept</text>
+
+  <rect x="52" y="220" width="256" height="34" rx="6" fill="#0d2818" stroke="#238636"/>
+  <text x="66" y="242" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#7ee787">never read, never written</text>
+
+  <!-- arrow -->
+  <line x1="340" y1="190" x2="588" y2="190" stroke="#8b949e" stroke-width="1.5"/>
+  <path d="M 588 184 L 598 190 L 588 196 z" fill="#8b949e"/>
+  <text x="352" y="176" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#79c0ff">git worktree add --detach</text>
+
+  <!-- worktree -->
+  <rect x="610" y="70" width="300" height="250" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="632" y="102" font-family="ui-sans-serif,system-ui,sans-serif" font-size="14" font-weight="600" fill="#e6edf3">Throwaway worktree</text>
+  <text x="632" y="126" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#8b949e">/tmp/git-forensics-bisect-*</text>
+
+  <!-- commit ladder -->
+  <line x1="646" y1="186" x2="874" y2="186" stroke="#30363d" stroke-width="2"/>
+  <circle cx="646" cy="186" r="7" fill="#238636"/>
+  <circle cx="703" cy="186" r="7" fill="#30363d"/>
+  <circle cx="760" cy="186" r="7" fill="#da3633"/>
+  <circle cx="817" cy="186" r="7" fill="#30363d"/>
+  <circle cx="874" cy="186" r="7" fill="#30363d"/>
+  <text x="632" y="216" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#8b949e">good</text>
+  <text x="744" y="216" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#ffa657">first bad</text>
+  <text x="845" y="216" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#8b949e">bad</text>
+
+  <text x="632" y="252" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#c9d1d9">each probe: run the command,</text>
+  <text x="632" y="272" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#c9d1d9">record 0 / non-zero / skip</text>
+  <text x="632" y="300" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#8b949e">tracked files restored after</text>
+
+  <text x="470" y="372" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" fill="#8b949e">Removed on exit, on error, and on Ctrl-C.</text>
+  <text x="470" y="394" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" fill="#8b949e">--keep leaves it for inspection. The bisect never checks out a commit on the left.</text>
+</svg>

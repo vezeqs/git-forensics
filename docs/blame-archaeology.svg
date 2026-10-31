@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="668" height="531" viewBox="0 0 668 531" role="img" aria-label="blame-archaeology">
+<rect x="0.5" y="0.5" width="667" height="530" rx="8" fill="#0d1117" stroke="#30363d"/>
+<path d="M0 38 H668" stroke="#30363d"/>
+<circle cx="20" cy="19" r="5" fill="#ff5f56"/><circle cx="38" cy="19" r="5" fill="#ffbd2e"/><circle cx="56" cy="19" r="5" fill="#27c93f"/>
+<text x="76" y="24" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#8b949e">blame-archaeology</text>
+<text x="26" y="78" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#79c0ff" font-weight="bold"># Blame archaeology</text>
+<text x="26" y="99" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">`src/parser.py:4`</text>
+<text x="26" y="120" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">```</text>
+<text x="26" y="141" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">      1  def parse_duration(text):</text>
+<text x="26" y="162" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">      2      """Parse "1h30m" into minutes."""</text>
+<text x="26" y="183" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">      3      total = 0</text>
+<text x="26" y="204" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#7ee787">&gt;     4      for part in text.split(":"):</text>
+<text x="26" y="225" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">      5          if part.endswith("h"):</text>
+<text x="26" y="246" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">      6              total += int(part[:-1]) * 60</text>
+<text x="26" y="267" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">      7          elif part.endswith("m"):</text>
+<text x="26" y="288" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">```</text>
+<text x="26" y="309" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#79c0ff" font-weight="bold">## Fact: introduced by</text>
+<text x="26" y="330" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">`cc5291f798be` split durations on colons</text>
+<text x="26" y="351" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Field | Value |</text>
+<text x="26" y="372" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| --- | --- |</text>
+<text x="26" y="393" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Author | Ada Lovelace &lt;ada@example.com&gt; |</text>
+<text x="26" y="414" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Date | 2026-03-02T09:00:00Z |</text>
+<text x="26" y="435" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Path at the time | `src/parser.py` |</text>
+<text x="26" y="456" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Line at the time | 4 |</text>
+<text x="26" y="477" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#79c0ff" font-weight="bold">## Gaps</text>
+<text x="26" y="498" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#ffa657">- origin is not a GitHub remote, so the pull request lookup was skipped</text>
+</svg>

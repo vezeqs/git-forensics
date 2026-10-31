@@ -146,6 +146,36 @@ class RegressionHuntTest(unittest.TestCase):
         self.assertEqual((self.repo / "notes.txt").read_text(), "uncommitted edit\n")
         self.assertEqual(git(self.repo, "rev-parse", "--abbrev-ref", "HEAD"), "main")
 
+    def test_survives_a_command_that_rewrites_a_tracked_file(self):
+        # A build step or formatter that writes into the tree used to make the
+        # next checkout fail with "Your local changes would be overwritten".
+        code, stdout, stderr = self.hunt(
+            "--good", self.first_good, "--bad", self.head,
+            "--cmd", 'echo dirty > value.txt; test "$(git show HEAD:value.txt)" = "good"',
+        )
+        self.assertEqual(code, 0, stderr)
+        self.assertIn(self.breaking[:12], stdout)
+
+    def test_a_killed_probe_is_a_skip_not_a_verdict(self):
+        code, stdout, _ = self.hunt(
+            "--good", self.first_good, "--bad", self.head,
+            "--cmd", "kill -9 $$", "--no-preflight",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("No first bad commit", stdout)
+
+    def test_force_records_that_the_verdict_is_not_evidence(self):
+        code, stdout, _ = self.hunt(
+            "--good", self.first_good, "--bad", self.head,
+            "--cmd", "true", "--force", "--json",
+        )
+        self.assertEqual(code, 0)
+        report = json.loads(stdout)
+        self.assertTrue(
+            any("not evidence of a regression" in w for w in report["warnings"]),
+            report["warnings"],
+        )
+
     def test_empty_command_is_rejected(self):
         code, _, stderr = self.hunt(
             "--good", self.first_good, "--bad", self.head, "--cmd", "   "

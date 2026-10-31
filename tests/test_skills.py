@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import py_compile
+import re
 import subprocess
 import sys
 import unittest
@@ -60,6 +61,17 @@ class SkillFilesTest(unittest.TestCase):
         self.assertIn("First bad commit", proc.stdout)
         self.assertIn("Fact: introduced by", proc.stdout)
         self.assertIn("fails at --good", proc.stdout + proc.stderr)
+
+        match = re.search(r"^`([0-9a-f]{12})` split durations on colons", proc.stdout, re.M)
+        self.assertIsNotNone(match, proc.stdout)
+        first_bad = match.group(1)
+
+        rendered = (REPO_ROOT / "docs" / "regression-hunt.svg").read_text()
+        self.assertIn(
+            first_bad,
+            rendered,
+            "docs/regression-hunt.svg is stale; run `make assets`",
+        )
 
 
 if __name__ == "__main__":

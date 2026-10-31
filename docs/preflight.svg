@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="989" height="132" viewBox="0 0 989 132" role="img" aria-label="preflight">
+<rect x="0.5" y="0.5" width="988" height="131" rx="8" fill="#0d1117" stroke="#30363d"/>
+<path d="M0 38 H989" stroke="#30363d"/>
+<circle cx="20" cy="19" r="5" fill="#ff5f56"/><circle cx="38" cy="19" r="5" fill="#ffbd2e"/><circle cx="56" cy="19" r="5" fill="#27c93f"/>
+<text x="76" y="24" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#8b949e">preflight</text>
+<text x="26" y="78" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#ffa657">error: the command fails at --good (986301602dcd) with exit 1. Bisecting a command that already fails at the</text>
+<text x="26" y="99" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">  good endpoint gives a meaningless answer. Pass --force to run anyway.</text>
+</svg>

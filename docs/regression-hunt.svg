@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="703" height="615" viewBox="0 0 703 615" role="img" aria-label="regression-hunt">
+<rect x="0.5" y="0.5" width="702" height="614" rx="8" fill="#0d1117" stroke="#30363d"/>
+<path d="M0 38 H703" stroke="#30363d"/>
+<circle cx="20" cy="19" r="5" fill="#ff5f56"/><circle cx="38" cy="19" r="5" fill="#ffbd2e"/><circle cx="56" cy="19" r="5" fill="#27c93f"/>
+<text x="76" y="24" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#8b949e">regression-hunt</text>
+<text x="26" y="78" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">$ python3 scripts/hunt.py --good v0.1.0 --bad HEAD --cmd 'python3 check.py'</text>
+<text x="26" y="99" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9"></text>
+<text x="26" y="120" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#79c0ff" font-weight="bold"># Regression hunt</text>
+<text x="26" y="141" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#7ee787">- Good: `986301602dcd`</text>
+<text x="26" y="162" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#7ee787">- Bad: `90d23bd8d2b7`</text>
+<text x="26" y="183" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">- Command: `python3 check.py`</text>
+<text x="26" y="204" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">- Probes: 4</text>
+<text x="26" y="225" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#79c0ff" font-weight="bold">## First bad commit</text>
+<text x="26" y="246" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9">`cc5291f798be` split durations on colons</text>
+<text x="26" y="267" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Field | Value |</text>
+<text x="26" y="288" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| --- | --- |</text>
+<text x="26" y="309" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Author | Ada Lovelace &lt;ada@example.com&gt; |</text>
+<text x="26" y="330" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Date | 2026-03-02T09:00:00Z |</text>
+<text x="26" y="351" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Parents | ca7775a4a67d |</text>
+<text x="26" y="372" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9" font-weight="bold">### Files changed</text>
+<text x="26" y="393" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| File | + | - |</text>
+<text x="26" y="414" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| --- | --- | --- |</text>
+<text x="26" y="435" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| `src/parser.py` | 1 | 1 |</text>
+<text x="26" y="456" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#c9d1d9" font-weight="bold">### Probes</text>
+<text x="26" y="477" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| Result | Commit | Subject |</text>
+<text x="26" y="498" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| --- | --- | --- |</text>
+<text x="26" y="519" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| bad | `90d23bd8d2b7` | expand the readme |</text>
+<text x="26" y="540" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| good | `986301602dcd` | add a duration parser |</text>
+<text x="26" y="561" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| bad | `cc5291f798be` | split durations on colons |</text>
+<text x="26" y="582" xml:space="preserve" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#8b949e">| good | `ca7775a4a67d` | add a readme |</text>
+</svg>

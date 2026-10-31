@@ -42,13 +42,24 @@ try:
     result = subprocess.run({command!r}, shell=True, timeout={timeout!r})
     code = result.returncode
 except subprocess.TimeoutExpired:
-    sys.exit({skip})
+    code = {skip}
 except OSError:
-    sys.exit({skip})
+    code = {skip}
 
-# 126 and 127 mean the command itself is unusable at this commit. That is a
-# skip, not evidence that the commit is good or bad.
-sys.exit({skip} if code in (126, 127) else code)
+# The worktree is disposable. Restore tracked files so a build step or a
+# formatter that writes into the tree cannot block the next checkout.
+subprocess.run(
+    ["git", "checkout", "--", "."],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+
+# 126 and 127 mean the command itself is unusable at this commit. A negative
+# code means the probe was killed by a signal. Neither is evidence that the
+# commit is good or bad, so both become a skip.
+if code < 0 or code in (126, 127):
+    code = {skip}
+sys.exit(code)
 '''
 
 
@@ -153,23 +164,33 @@ def preflight(worktree, wrapper, good, bad, timeout_seconds, force):
 
     git(worktree.path, "checkout", "--detach", "--quiet", bad)
     code_at_bad = run_wrapper(worktree.path, wrapper, timeout_seconds)
-    if code_at_bad == 0 and not force:
-        raise GitError(
-            "the command succeeds at --bad (%s). There is no failure to bisect. "
-            "Check that --cmd exits non-zero when the regression is present, "
-            "or pass --force to run anyway." % bad[:12]
-        )
+    if code_at_bad == 0:
+        if force:
+            warnings.append(
+                "the command succeeds at --bad; the verdict below is not evidence of a regression"
+            )
+        else:
+            raise GitError(
+                "the command succeeds at --bad (%s). There is no failure to bisect. "
+                "Check that --cmd exits non-zero when the regression is present, "
+                "or pass --force to run anyway." % bad[:12]
+            )
     if code_at_bad == SKIP:
         warnings.append("the command was skipped at --bad; every probe may be a skip")
 
     git(worktree.path, "checkout", "--detach", "--quiet", good)
     code_at_good = run_wrapper(worktree.path, wrapper, timeout_seconds)
-    if code_at_good != 0 and code_at_good != SKIP and not force:
-        raise GitError(
-            "the command fails at --good (%s) with exit %d. Bisecting a command "
-            "that already fails at the good endpoint gives a meaningless answer. "
-            "Pass --force to run anyway." % (good[:12], code_at_good)
-        )
+    if code_at_good != 0 and code_at_good != SKIP:
+        if force:
+            warnings.append(
+                "the command fails at --good; the verdict below is not evidence of a regression"
+            )
+        else:
+            raise GitError(
+                "the command fails at --good (%s) with exit %d. Bisecting a command "
+                "that already fails at the good endpoint gives a meaningless answer. "
+                "Pass --force to run anyway." % (good[:12], code_at_good)
+            )
     if code_at_good == SKIP:
         warnings.append("the command was skipped at --good; the endpoints are not comparable")
 

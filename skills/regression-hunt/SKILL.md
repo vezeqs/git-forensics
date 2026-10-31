@@ -110,6 +110,10 @@ Rules for the report:
   explicitly asked to bisect a range you warned them about.
 - Do not remove the worktree or prune worktrees by hand. The script removes
   what it created, including on error and on Ctrl-C.
+- A probe may write into the worktree. Tracked files are restored after each
+  run, so a build step is fine. Untracked files that collide with a commit in
+  range can still block a checkout; if that happens, report it instead of
+  forcing.
 - Do not run this on a shallow clone without saying so. The range may be
   incomplete and the answer will look authoritative while being wrong.
 
@@ -118,6 +122,7 @@ Rules for the report:
 - Merge-heavy histories can produce a commit that is not on the first-parent
   path. Read the reported parents before blaming a person.
 - Submodules are not initialized in the worktree. A command that needs them
-  will fail everywhere and be read as "bad" at every commit.
+  fails at both endpoints, so the preflight refuses the range. Initialize them
+  inside a kept worktree if the user needs the answer.
 - The worktree lives in the system temp directory. If `/tmp` is small and the
   build is large, point `TMPDIR` at a bigger volume.

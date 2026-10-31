@@ -93,8 +93,9 @@ Rules for the report:
   race" is a fabrication unless a commit, PR, or issue says so.
 - When a gap exists, report the gap. An honest "the history does not say" is a
   better answer than a confident story.
-- If blame lands on a merge commit, say that the line came in through a merge
-  and name both parents. Do not attribute it to the merger.
+- If blame lands on a merge commit, the report says so and names both parents.
+  Keep that in your answer; do not attribute a conflict resolution to the
+  person who clicked merge.
 
 ## Rules
 

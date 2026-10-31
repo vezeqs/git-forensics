@@ -9,6 +9,8 @@ Two questions git does not answer directly. Two agent skills that do.
 
 Neither skill guesses. When the evidence runs out, they say so.
 
+<img src="docs/demo.gif" alt="Terminal recording: regression-hunt bisects a broken parser and reports the commit that split durations on colons">
+
 ## The problem
 
 Agents are good at reading code and bad at two specific things.
@@ -23,90 +25,52 @@ confident paragraph about intent that no commit supports. The commit subject say
 "refactor"; the agent says "to fix a race condition". That is fabrication with a
 straight face.
 
-Both problems have the same shape: the correct method is mechanical and
-tedious, and the failure mode is a plausible invention. So the method lives in a
-script, and the invention is structurally prevented.
+Both problems have the same shape: the correct method is mechanical and tedious,
+and the failure mode is a plausible invention. So the method lives in a script,
+and the invention is structurally prevented.
 
-## Demo
+## What it looks like
 
-A parser regresses between `v0.1.0` and `HEAD`. The agent runs one command:
+A parser regresses between `v0.1.0` and `HEAD`. One command finds the commit:
 
-```console
-$ python3 skills/regression-hunt/scripts/hunt.py \
-    --good v0.1.0 --bad HEAD \
-    --cmd 'python3 -c "from src.parser import parse_duration; raise SystemExit(0 if parse_duration(\"1h 30m\") == 90 else 1)"'
+<img src="docs/regression-hunt.svg" alt="regression-hunt output: first bad commit cc5291f, split durations on colons, 4 probes">
 
-# Regression hunt
+The other skill answers the other question, and refuses to overreach:
 
-- Good: `2221b549980d`
-- Bad: `78de2f1fab10`
-- Probes: 4
+<img src="docs/blame-archaeology.svg" alt="blame-archaeology output: fact section naming the commit, and a gaps section instead of a guess">
 
-## First bad commit
+And when the command cannot answer the question at all, it says so before
+spending ten minutes:
 
-`394b7f2c109b` split durations on colons
-
-| Field | Value |
-| --- | --- |
-| Author | Ada Lovelace <ada@example.com> |
-| Date | 2026-03-02T09:00:00Z |
-| Parents | a07fce02df6c |
-
-### Files changed
-
-| File | + | - |
-| --- | --- | --- |
-| `src/parser.py` | 1 | 1 |
-```
-
-The command is wrong? The tool tells you before it wastes ten minutes:
-
-```console
-$ python3 skills/regression-hunt/scripts/hunt.py --good v0.1.0 --bad HEAD --cmd "pytest -q"
-error: the command fails at --good (2221b549980d) with exit 1. Bisecting a
-command that already fails at the good endpoint gives a meaningless answer.
-Pass --force to run anyway.
-```
-
-The second skill answers the other question, and refuses to overreach:
-
-```console
-$ python3 skills/blame-archaeology/scripts/archaeology.py src/parser.py:4
-
-## Fact: introduced by
-
-`394b7f2c109b` split durations on colons
-
-| Field | Value |
-| --- | --- |
-| Author | Ada Lovelace <ada@example.com> |
-| Path at the time | `src/parser.py` |
-| Line at the time | 4 |
-
-## Gaps
-
-- origin is not a GitHub remote, so the pull request lookup was skipped
-```
-
-On a repository with a GitHub remote and `gh` installed, the report adds the
-pull request that GitHub associates with the commit, under an `Inference`
-heading, with the caveat spelled out. When that lookup is unavailable, the
-reason appears under `Gaps` instead of a guess.
+<img src="docs/preflight.svg" alt="Preflight refusal: the command fails at the good endpoint, so the range cannot produce a meaningful answer">
 
 Every section is either `Fact` (read from git) or `Inference` (an association
 that may be wrong). `Gaps` is not a failure state; it is the answer being honest.
 
-## Reproduce this
+## How they stay safe
 
-The demo above is a script. It builds the repository, breaks the parser, and
-runs both skills against it:
+<img src="docs/architecture.svg" alt="Diagram: the bisect runs in a temp worktree; the user's checkout is never read or written">
 
-```sh
-./examples/demo.sh
-```
+**`regression-hunt` never touches your checkout.** It runs
+`git worktree add --detach` into a temp directory and bisects there. Your
+branch, index, and uncommitted changes are not read. The worktree is removed on
+exit, on error, and on Ctrl-C. `--keep` leaves it for inspection.
 
-The commit dates are fixed, so the hashes in the output match the ones above.
-No network, no fixtures, nothing left behind.
+**It refuses a range that cannot answer the question.** Before bisecting, it
+runs your command at both endpoints. If the command passes at `--bad`, there is
+no failure to find. If it fails at `--good`, the answer would be meaningless.
+Both cases stop with exit 4 instead of producing a confident wrong commit.
+
+**Timeouts and signals are skips, not verdicts.** A probe that exceeds
+`--timeout`, or one killed by a signal, is reported to git as skip (125). It
+never gets counted as "good" or "bad".
+
+**A build step cannot break the run.** Tracked files are restored after each
+probe, so a formatter or a compiler writing into the tree does not block the
+next checkout.
+
+**`blame-archaeology` only reads.** It runs `git blame`, `git show`, `git log`,
+and one `GET` through `gh api`. It has no write path.
 
 ## Install
 
@@ -125,27 +89,9 @@ Or, if you use the skills CLI:
 npx skills add vezeqs/git-forensics
 ```
 
-Requirements: `git` 2.20 or newer and Python 3.9 or newer. No third-party
-packages. `gh` is optional and only used for pull request lookups.
-
-## How they stay safe
-
-**`regression-hunt` never touches your checkout.** It runs
-`git worktree add --detach` into a temp directory and bisects there. Your
-branch, index, and uncommitted changes are not read. The worktree is removed on
-exit, on error, and on Ctrl-C. `--keep` leaves it for inspection.
-
-**It refuses a range that cannot answer the question.** Before bisecting, it
-runs your command at both endpoints. If the command passes at `--bad`, there is
-no failure to find. If it fails at `--good`, the answer would be meaningless.
-Both cases stop with exit 4 instead of producing a confident wrong commit.
-
-**Timeouts are skips, not verdicts.** A probe that exceeds `--timeout` is
-reported to git as skip (125), the same as an untestable commit. It never gets
-counted as "good" or "bad".
-
-**`blame-archaeology` only reads.** It runs `git blame`, `git show`, `git log`,
-and one `GET` through `gh api`. It has no write path.
+Requirements: `git` 2.20 or newer, Python 3.9 or newer, and a POSIX shell for
+the command you bisect. No third-party packages. `gh` is optional and only used
+for pull request lookups.
 
 ## Exit codes
 
@@ -171,20 +117,33 @@ and
 - **Shallow clones.** The range may be incomplete. The tool warns, but cannot
   repair it.
 - **Submodules.** They are not initialized in the worktree, so a command that
-  needs them fails at both endpoints and the preflight refuses the range. Run
-  `git submodule update --init` inside the kept worktree if you need them.
+  needs them fails at both endpoints and the preflight refuses the range.
 - **Squashed history.** If the repository was imported as one commit, there is
   no archaeology to do. The skill reports a gap rather than reconstructing a
   plausible past.
 - **Merge attribution.** Blame follows a line into one parent. A change made
-  while resolving a conflict is attributed to the merge, not to whoever wrote it.
+  while resolving a conflict is attributed to the merge, which the report names.
+
+## Reproduce this
+
+Every image above comes from one script. It builds the repository, breaks the
+parser, and runs both skills against it:
+
+```sh
+./examples/demo.sh          # the run the README quotes
+make assets                 # regenerate docs/ from that run
+```
+
+The commit dates are fixed, so the hashes are stable across runs. No network,
+no fixtures, nothing left behind.
 
 ## Development
 
 ```sh
-make check     # validator + 34 tests
+make check     # validator + 51 tests
 make test      # tests only
 make validate  # SKILL.md conformance only
+make assets    # regenerate the images in docs/
 ```
 
 The suite creates real repositories in a temp directory and drives the scripts
@@ -198,6 +157,7 @@ skills/<name>/SKILL.md        instructions the agent reads
 skills/<name>/scripts/*.py    the mechanical part
 skills/<name>/references/     loaded only when needed
 tools/validate_skills.py      spec conformance for this repo
+tools/render_assets.py        README images, generated from a real run
 tests/                        behavioural tests
 ```
 
